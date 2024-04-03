@@ -1,0 +1,85 @@
+import numpy as np
+import cv2
+import skimage.filters
+from skimage.color import rgb2gray
+from skimage.io import imread, imshow
+import tkinter as tk
+from PIL import Image, ImageTk
+from tkinter import filedialog
+
+selected_image = None
+selected_filter = None
+
+def apply_filter(image, filter_name):
+   
+    gray_image = rgb2gray(image)
+
+    
+    filtered_image = getattr(skimage.filters, filter_name)(gray_image)
+
+    
+    filtered_image = cv2.cvtColor(filtered_image, cv2.COLOR_GRAY2RGB)
+
+    return filtered_image
+
+def on_select_filter(event):
+    global selected_filter
+    selected_filter = event.widget.get()
+
+def on_apply_filter():
+    global selected_image, selected_filter, image_tk_widget
+    if selected_image is not None and selected_filter is not None:
+        filtered_image = apply_filter(selected_image, selected_filter)
+        image = Image.fromarray(filtered_image)
+        image_tk = ImageTk.PhotoImage(image)
+        image_tk_widget.configure(image=image_tk)
+        image_tk_widget.image = image_tk
+
+def on_select_image():
+    global selected_image
+    image_path = filedialog.askopenfilename(filetypes=[("JPEG", "*.jpg"), ("PNG", "*.png")])
+    if image_path:
+        selected_image = imread(image_path)
+        image = Image.fromarray(selected_image)
+        image_tk = ImageTk.PhotoImage(image)
+        image_tk_widget.configure(image=image_tk)
+        image_tk_widget.image = image_tk
+
+def main():
+    global image_tk_widget
+    
+    window = tk.Tk()
+    window.title("Image Filtering")
+    window.resizable(False, False)
+    window.geometry("400x400")
+
+   
+    filter_listbox = tk.Listbox(window, width=40, height=10, selectmode="single")
+    for filter_name in skimage.filters.__all__:
+        if filter_name.endswith("Filter"):
+            filter_listbox.insert(tk.END, filter_name)
+    filter_listbox.bind("<<ListboxSelect>>", on_select_filter)
+    filter_listbox.pack(pady=10)
+
+    
+    apply_filter_button = tk.Button(window, text="Apply Filter", command=on_apply_filter)
+    apply_filter_button.pack(pady=10)
+
+    
+    select_image_button = tk.Button(window, text="Select Image", command=on_select_image)
+    select_image_button.pack(pady=10)
+
+   
+    image_frame = tk.Frame(window)
+    image_frame.pack(pady=10)
+
+    
+    image_tk = ImageTk.PhotoImage(Image.new('RGB', (400, 400))) 
+    image_tk_widget.image = image_tk
+    image_tk_widget.pack()
+
+   
+    window.mainloop()
+
+if __name__ == '__main__':
+    main()
